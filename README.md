@@ -5,20 +5,33 @@ A tutorial paper explaining the law of iterated expectations and its role as the
 ## Authors
 
 - **Ashley I. Naimi, PhD** (Corresponding Author)
-  Department of Epidemiology, Emory University
-  Email: ashley.naimi@emory.edu
+Department of Epidemiology, 
+Department of Data and Decision Science, 
+Emory University
+Email: ashley.naimi@emory.edu
+
+- **Razieh Nabi, PhD** 
+Department of Biostatistics, 
+Department of Bioinformatics, 
+Emory University
+
+- **Lindsay Collin, PhD** 
+Department of Epidemiology, 
+Emory University
 
 - **Paul N Zivich III, PhD**
-  Department of Epidemiology, UNC Chapel Hill
+Department of Epidemiology, 
+UNC Chapel Hill
 
 - **Stephen R Cole, PhD**
-  Department of Epidemiology, UNC Chapel Hill
+Department of Epidemiology, 
+UNC Chapel Hill
 
 ## About
 
 This primer introduces the law of iterated expectations (also known as the law of total expectation or the tower rule), the integration notation used to express it, and its role as the mathematical backbone of causal effect identification via the g formula. The paper is aimed at applied researchers with limited statistics background.
 
-Under the assumptions of counterfactual consistency, no interference, positivity, and conditional exchangeability, the law of iterated expectations can be rewritten as a causal standardization formula (the g formula) in two nonparametrically equivalent forms:
+Under the assumptions of causal consistency,  positivity, and conditional exchangeability, the law of iterated expectations can be rewritten as a causal standardization formula (the g formula) in two nonparametrically equivalent forms:
 
 - **NICE** (Non-Iterative Conditional Expectation): a single weighted average of conditional outcome means
 - **ICE** (Iterative Conditional Expectation): nested sequential expectations
@@ -33,7 +46,6 @@ Both forms are illustrated using three progressively complex numerical examples:
 
 | Field               | Value                                               |
 |---------------------|-----------------------------------------------------|
-| Target Journal      | TBD                                                 |
 | Text word count     | 3,699                                               |
 | Abstract word count | 200                                                 |
 | Figures             | 2                                                   |
@@ -68,38 +80,6 @@ Both forms are illustrated using three progressively complex numerical examples:
 ├── _corpus/             # Reference papers and literature
 ├── _notes/              # Working notes and drafts
 └── misc/                # Miscellaneous files
-```
-
-## Compiling the Document
-
-The manuscript is written in LaTeX. To compile:
-
-### Prerequisites
-
-- LaTeX distribution (e.g., TeX Live, MiKTeX, or MacTeX)
-- BibTeX for bibliography management
-
-### Required LaTeX Packages
-
-- `amsmath`, `amssymb`, `bm` — mathematical typesetting
-- `algorithm`, `algpseudocode` — algorithm environments
-- `natbib` — bibliography management
-- `hyperref` — hyperlinks and cross-references
-- `graphicx` — figure inclusion
-- `booktabs`, `tabularx`, `longtable` — tables
-- `lineno` — line numbers
-- `caption`, `subcaption` — figure captions
-- `mathpazo`, `mathabx` — fonts
-- `syllogism`, `accents`, `cancel`, `relsize` — math utilities
-
-### Compilation Steps
-
-```bash
-cd manuscript/
-pdflatex 2026_05_05-IdentificationEstimationMath.tex
-bibtex 2026_05_05-IdentificationEstimationMath
-pdflatex 2026_05_05-IdentificationEstimationMath.tex
-pdflatex 2026_05_05-IdentificationEstimationMath.tex
 ```
 
 ## Acknowledgements
