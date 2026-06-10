@@ -1,0 +1,882 @@
+\documentclass[12pt]{article}
+
+% math
+\usepackage{amsmath,amssymb}
+\numberwithin{equation}{section}
+\usepackage{xfrac}
+\usepackage{eqnarray} % (deprecated, but retained in case you use it)
+\usepackage{cancel}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{bm}
+\usepackage{syllogism}
+
+% font
+%\usepackage{fourier}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo,mathabx}
+
+% headings
+\usepackage{sectsty}
+\sectionfont{\fontsize{12}{15}\selectfont}
+\subsectionfont{\normalfont\fontsize{12}{15}\selectfont}
+\subsubsectionfont{\itshape\normalfont\fontsize{12}{15}\selectfont}
+
+% line numbers
+\usepackage{lineno}
+
+% footnotes
+\usepackage[symbol]{footmisc}
+
+% expectation operator
+\usepackage{relsize}
+\newcommand{\E}{\mathop{\vcenter{\hbox{\relsize{+1}$E$}}}}
+
+% logit / expit operators
+\DeclareMathOperator{\logit}{logit}
+\DeclareMathOperator{\expit}{expit}
+
+\newcommand{\Pn}{\mathbb{P}_n}
+
+% accents (double hat)
+\usepackage{accents}
+\newlength{\dhatheight}
+\newcommand{\doublehat}[1]{%
+    \settoheight{\dhatheight}{\ensuremath{\hat{#1}}}%
+    \addtolength{\dhatheight}{-0.15ex}%
+    \hat{\vphantom{\rule{1pt}{\dhatheight}}%
+    \smash{\hat{#1}}}}
+
+% independence symbol
+\newcommand{\bigCI}{\mathrel{\text{\scalebox{1.07}{$\perp\mkern-10mu\perp$}}}}
+
+% lineno patch for amsmath envs
+\newcommand*\patchAmsMathEnvironmentForLineno[1]{%
+	\expandafter\let\csname old#1\expandafter\endcsname\csname #1\endcsname
+	\expandafter\let\csname oldend#1\expandafter\endcsname\csname end#1\endcsname
+	\renewenvironment{#1}%
+	{\linenomath\csname old#1\endcsname}%
+	{\csname oldend#1\endcsname\endlinenomath}%
+}
+\newcommand*\patchBothAmsMathEnvironmentsForLineno[1]{%
+	\patchAmsMathEnvironmentForLineno{#1}%
+	\patchAmsMathEnvironmentForLineno{#1*}%
+}
+\AtBeginDocument{%
+	\patchBothAmsMathEnvironmentsForLineno{equation}%
+	\patchBothAmsMathEnvironmentsForLineno{align}%
+	\patchBothAmsMathEnvironmentsForLineno{flalign}%
+	\patchBothAmsMathEnvironmentsForLineno{alignat}%
+	\patchBothAmsMathEnvironmentsForLineno{gather}%
+	\patchBothAmsMathEnvironmentsForLineno{multline}%
+}
+
+% misc
+\usepackage{color}
+\usepackage{wrapfig}
+\usepackage{indentfirst}
+\usepackage{setspace}
+\usepackage[numbers,super,sort&compress]{natbib}
+\usepackage{booktabs}
+\usepackage{rotating}
+\usepackage[margin = .85in]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+%\renewcommand{\headrulewidth}{0pt}
+\rfoot{\thepage}
+\pagenumbering{arabic}
+\usepackage{tabularx}
+\usepackage{pdfpages}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{float}
+\usepackage{lscape}
+\usepackage{graphicx}
+\usepackage{mdwlist}
+\usepackage{url}
+\urlstyle{same}
+\usepackage{comment}
+\usepackage{amsthm}
+
+% figures and captions: use caption + subcaption (clean with hyperref)
+\usepackage{caption}
+\usepackage{subcaption}
+%\captionsetup[sub]{position=top, font=large} % (replaces [subfloat] key)
+
+% titlesec (kept as requested)
+\usepackage[compact]{titlesec}
+
+% remove square brackets in bib
+\makeatletter
+\renewcommand\@biblabel[1]{#1.}
+\makeatother
+
+\newtheorem*{remark}{Remark} % Unnumbered
+
+% hyperlinks LAST (after most packages and natbib)
+\usepackage[colorlinks=true, urlcolor=blue, linkcolor=black, citecolor=black]{hyperref}
+
+% path to images
+\graphicspath{{../figures/}}
+
+\rhead{\color{red} Draft in progress}
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\thispagestyle{empty}
+\baselineskip=28pt
+
+\noindent
+
+\vskip 0.2cm {{\noindent \huge A Law of Iterated Expectation Primer for Causal Inference}}
+
+\baselineskip=12pt
+
+\vskip .25cm
+\noindent Ashley I. Naimi, PhD$^{1,2 *}$\\[.5em]
+\noindent Razieh Nabi, PhD$^{3,4}$\\[.5em]
+\noindent Lindsay J. Collin, PhD$^{1}$\\[.5em]
+\noindent Paul N. Zivich, PhD$^{5}$\\[.5em]
+\noindent Stephen R. Cole, PhD$^{5}$	\\[.5em]
+
+\vskip .25cm
+\noindent $^1$ Department of Epidemiology, Emory University.\\[.5em]
+\noindent $^2$ Department of Data and Decision Sciences, Emory University.\\[.5em]
+\noindent $^3$ Department of Biostatistics, Emory University.\\[.5em]
+\noindent $^4$ Department of Bioinformatics, Emory University.\\[.5em]
+\noindent $^5$ Department of Epidemiology, UNC Chapel Hill.\\[.5em]
+
+\vskip .25cm
+\noindent \hskip -.2cm
+\begin{tabular}{ll}
+*Correspondence: & Department of Epidemiology \\[-.1cm]
+& Rollins School of Public Health \\[-.1cm]
+& Emory University \\[-.1cm]
+& 1518 Clifton Road \\[-.1cm]
+& Atlanta, GA 30322\\[-.1cm]
+& \href{mailto:ashley.naimi@emory.edu}{ashley.naimi@emory.edu}
+\end{tabular}
+
+\vskip .25cm
+\noindent Conflicts: The authors have no conflicts to disclose.
+\vskip .25cm
+\noindent Acknowledgements: I thank Dr Edward Kennedy at CMU for sharing his causal inference course notes, on which some of this content was based.
+\vskip .25cm
+\noindent Funding: None.
+
+\vskip .25cm
+\vfill
+\noindent \hskip -.2cm
+\begin{tabular}{ll}
+Target Journal: 	   & \emph{TBD} \\[-.01cm]
+Text word count: 	   & 3,093\\[-.01cm]
+Abstract word count:   & 200\\[-.01cm]
+Number of Figures: 	   & 2\\[-.01cm]
+Number of Tables:      & 4\\[-.01cm]
+Number of References:  & 13\\[-.01cm]
+Running head:  & Iterated Expectations: A Primer for Causal Inference  \\ 
+\end{tabular}
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\thispagestyle{empty}
+\begin{center}
+{\Large{\bf Abstract}} 
+\end{center}
+\baselineskip=12pt
+The g formula is a foundational tool for identifying causal effects in observational data. This tool is based  on the law of iterated expectation, a key mathematical identity in statistics. However, the notation with which the law of iterated expectation and the g formula is expressed can be opaque to those with little background in statistics. We provide a primer introducing the law of iterated expectation, the integration notation used to express it, and its role for causal effect identification via the g formula. Under the assumptions of causal consistency, positivity, and conditional exchangeability, the law of iterated expectation can be rewritten as a causal standardization formula (the g formula) in two nonparametrically equivalent forms: a non-iterative conditional expectation (NICE) form involving a single weighted average of conditional outcome means, and an iterative conditional expectation (ICE) form involving nested expectations. We illustrate both forms using three progressively complex numerical examples: a time-fixed example with a single binary confounder, a time-fixed example with discrete and continuous confounders, and a time-varying example with two timepoints. We provide clarity on what the law of iterated expectation is, how it is related to the g formula, and how to gain intuition of its mathematical formulations in actual data examples that can be generalized to a range of settings.
+\noindent  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+%
+\baselineskip=12pt
+\par\vfill\noindent
+{\bf KEY WORDS:} Causal Inference; Causal Identification; Iterated Expectation; G Formula; G Computation\\
+
+%{\bf KEY MESSAGES}:
+%\begin{itemize}
+%	\item 
+%	\item 
+%	\item 
+%\end{itemize}
+\par\medskip\noindent
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+\newpage
+\doublespacing
+%\linenumbers
+\setcounter{page}{1}
+
+\section{Introduction}
+
+Many instances of modern causal inference require translating unobservable potential outcomes into functions of observed data, a step known as identification. This translation occurs as a mathematical exercise, and articulates the conditions under which data can be used to estimate causal effects defined as contrasts of potential outcomes. One mathematical tool central to this translation is the law of iterated expectation, an identity relating marginal and conditional means that appears throughout the causal inference literature. A firm grasp of this identity, and of the two equivalent forms in which it is typically expressed, makes the mechanics of widely used causal estimators, such as parametric g computation,\footnote{The g formula was originally introduced by Robins in 1986\cite{Robins1986} as a (i) mathematical tool to identify causal effects using data, and (ii) a statistical ``plug in'' tool to estimate causal effects. With time, these uses were characterized by different names: the ``g formula'' for identification; and the ``g computation algorithm'' for estimation. Another term used is the ``parametric g formula'' or ``parametric g computation'', which emphasizes the use use parametric models when needed to generate estimates with the procedure.} immediately transparent. 
+
+This primer seeks to build that understanding from an intuitive standpoint, using concrete numerical examples to connect the mathematics to practice. We explain the connections between integration notation, the law of iterated expectation, and the g formula for those with little background in mathematical statistics. To provide intuition, we rely on three increasingly complex applied examples. %: a time-fixed example with a single binary outcome, exposure, and confounder; a time fixed example with a single binary exposure, continuous outcome, and confounder set that includes binary, categorical, and continuous confounders; and a time varying example with two time-points and time-dependent confounding. 
+
+\section{The Law of Iterated Expectation}
+
+Throughout, uppercase letters such as $X$ and $Y$ denote random variables, while lowercase letters such as $x$ and $y$ denote particular realized values of those variables. The marginal expectation $E(Y)$ is the average value of $Y$ across the entire population. In contrast, the conditional expectation $E(Y \mid X = x)$ is the average value of $Y$ among individuals with the specific value $X = x$. Viewed as a function of $x$, the quantity $E(Y \mid X = x)$ maps each possible value of $X$ to a corresponding conditional mean of $Y$. Evaluating this function at the random variable $X$ yields $E(Y \mid X)$, which is itself a random variable. 
+
+The law of iterated expectation (also known as the law of total expectation, the tower rule, or, for a binary $Y$ variable, the law of total probability) provides a formal connection between these quantities by showing that the marginal expectation $E(Y)$ can be recovered by averaging the random variable $E(Y \mid X)$ over the distribution of $X$. The identity stipulates that, for any two random variables $Y$ and $X$, this averaging can be done in two mathematically equivalent ways:\cite{Wasserman2004}$^{\text{(p55)}}$
+\begin{equation}
+E(Y) = \underbrace{E[E(Y\mid X)]}_{\text{iterative form}} = \overbrace{\int E(Y \mid X = x)\,d\mathbb{P}(x)}^{\text{non-iterative form}}
+\label{eqn:lie}
+\end{equation}
+
+\noindent % where $\mathbb{P}(x)$ denotes the probability distribution induced by $X$. In words, we can recover the marginal mean of $Y$ by first computing the mean of $Y$ within strata of $X$, and then averaging those stratum-specific means over the distribution of $X$. Here, ``over the distribution of $X$'' is referring to a weighted average, with weights defined by probability mass or density function values from $X$.\cite{Wasserman2004}$^{\text{(p22-3)}}$
+
+The first, $E[E(Y\mid X)]$, is the \emph{iterative} form emphasizing the conditional expectation $E(Y\mid X)$ as a random variable, which is then averaged over $X$. The second, $\int E(Y\mid X=x)\,d\mathbb{P}(x)$, is the \emph{non-iterative} form, which makes the averaging operation more explicit by expressing the expectation as an integral with respect to a probability measure $\mathbb{P}$ governing $X$.
+
+A first point of confusion can be the meaning of ``with respect to a probability measure $\mathbb{P}$ governing $X$.'' Informally, $\mathbb{P}(x)$ denotes the probability distribution induced by $X$, or the probability distribution that determines how the random variable $X$ behaves (e.g., as a categorical or continuous random variable). Integrating with respect to $\mathbb{P}(x)$ therefore corresponds to averaging over the distribution of $X$ (a more formal measure-theoretic explanation is provided in the Appendix). 
+
+A second point of confusion is that integrals such as $\int E(Y\mid X=x)\,d\mathbb{P}(x)$ can be written with different notation, but the same effect (see Appendix). However, concretely the integral $\int E(Y\mid X=x)\,d\mathbb{P}(x)$ (or some of those in the Appendix) can be interpreted as a single notational tool used to convey that the average $E(Y \mid X = x)$ is weighted by the distribution of $X$. When $X$ is a categorical variable with $k$ categories, this integral collapses to a weighted sum:
+\begin{align*}
+	\int E(Y\mid X=x)\,d\mathbb{P}(x) \;=\; E(Y\mid X=1)\cdot & P(X=1)  \;+\; \\ E(Y\mid& X=2) \cdot P(X=2)  \;+\; \\ & \cdots \;+\; E(Y\mid X=k)\cdot P(X= k).
+\end{align*}
+
+\noindent When $X$ is continuous with probability density function $f_X$ (technically, as described in the Appendix, with respect to Lebesgue measure), the law of iterated expectation can be written as:
+\begin{equation}
+\int E(Y\mid X=x)\,d\mathbb{P}(x) \;=\; \int_{-\infty}^{\infty} E(Y\mid X=x)\,f_X(x)\,dx.
+\end{equation}
+
+\noindent The density $f_X(x)$ plays the role of the weights, and, instead of a discrete sum, a continuous integral is implied. However, the intuition is the same as in the binary case: we are averaging the conditional mean $E(Y\mid X=x)$ over all values of $x$, weighted by how probable each value is under the distribution of $X$. 
+
+In many technical papers, the integrals used with notation such as $d\mathbb{P}(x)$ are referred to as Lebesgue, or Lebesgue--Stieltjes integrals (see Appendix). For the examples considered in this primer, and in most applied work, the distinctions between these and other integrals do not affect the resulting numerical quantities, but can matter for theoretical work involving convergence, consistency, and efficiency theory.\cite{Vaart2000}
+
+\section{Example 1: Time Fixed Example}
+
+We begin with an applied example provided by Sato and Matsuyama,\cite{Sato2003} with data on the effect of tamoxifen use on breast cancer recurrence among women who underwent surgery for breast cancer.
+%
+\begin{wrapfigure}{r}{0.45\textwidth}
+\centering
+  \begin{minipage}{0.40\textwidth}
+    \centering
+    \includegraphics[scale = .4]{simple_dag_a.png}
+    \caption{A directed acyclic graph (DAG) illustrating the causal structure among treatment $A$, outcome $Y$, and baseline covariate $W$. An arrow from one node to another indicates a direct causal effect. The path $W \to A \to Y$ represents confounding of the effect of $A$ on $Y$ by $W$.}
+    \label{fig:dag_a}
+  \end{minipage}%
+\end{wrapfigure}%
+%
+These observational data include 4,901 women with breast cancer assigned to tamoxifen use (A=1) or not (A=0), with an outcome measure of breast cancer recurrence (Y=1). Women were also classified as having positive lymph node metastasis (W=1) or not (W=0) at the time of surgery before tamoxifen use. The causal diagram is represented by the directed acyclic graph (DAG) depicted in Figure \ref{fig:dag_a}.
+
+ Causal effects are often expressed as contrasts, such as the causal risk difference: $\psi = E(Y^{a=1} - Y^{a=0})$, where $Y^a$ is the potential outcome that would be observed if $A$ were set to $a$. However, potential outcomes are unobservable, and we can only identify our causal contrast of interest under assumptions. These assumptions allow us to mathematically equate $E(Y^{a})$ with some function of our observed data, which means we can use averages of observed outcomes to quantify averages of potential outcomes.\cite{Hernan2025}$^{\text{(chpt 2)}}$ 
+
+For a dataset generated from the DAG in Figure 1a, one sufficient set of identification assumptions includes causal consistency, positivity, and conditional exchangeability (the latter which includes no confounding, selection, or information bias). For data generated from Figure \ref{fig:dag_a} the latter assumption requires adjusting for variables $W$ (the assumption may also require adjusting for missing data and measurement error). In this example, $W$ is a single binary variable (i.e., $W \in [0,1]$). Together, these assumptions allow us to do the following: 
+\begin{align}
+ E(Y^a) & = \sum_w E(Y^a \mid W = w)\cdot P(W = w)  \\
+        & = \sum_w E(Y^a \mid A = a, W = w)\cdot P(W = w) \\
+        & = \sum_w E(Y \mid A = a, W = w)\cdot P(W = w) \label{eqn:last}
+\end{align}
+
+\noindent where the first equality is given by the law of iterated expectation, the second by conditional exchangeability and positivity,\cite{Naimi2023a} the third by causal consistency (including treatment variation irrelevance and no interference).\cite{VanderWeele2009a} Under these identification assumptions, the last equation \ref{eqn:last} only involves observed variables, but is equal to $E(Y^a)$, allowing us to estimate this causal object with our data. 
+
+\medskip
+\noindent\fbox{%
+  \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+    \smallskip
+    \textbf{Box 1: The G Formula versus the Law of Iterated Expectation}\\[4pt]
+The law of iterated expectation is a statistical statement about the relationships between random variables. For example, if we refer to the DAG in Figure \ref{fig:dag_a}, we can write:
+\begin{equation}
+E(W) = E[E(W \mid Y)] = \sum_y E(W \mid Y = y)\cdot P(Y = y)
+\end{equation}
+ which would be valid as a statistical relation. However, the g formula is a statement about causality. It starts by stipulating a probability model for the joint distribution of the data and factoring this distribution according to the \emph{causal} ordering of the variables encoded in the DAG. After converting the factored joint density to a sequence of expectations, and intervening to yield a degenerate distribution for the exposure (which allows us to drop any terms for the propensity score), we then get the more familiar ``law of iterated expectation'' version of the g formula:
+ \begin{equation}
+ E(Y^a) = \int E(Y \mid A = a, W = w)\,d\mathbb{P}(w)
+ \end{equation}
+ Thus, the law of iterated expectation is a mathematical identity that holds for any probability distribution. The g formula is obtained by combining the law of iterated expectation with causal identification assumptions that permit replacement of counterfactual quantities by observed data quantities.
+    \smallskip
+  \end{minipage}%
+}
+\medskip
+
+\subsection{Non-Iterative Conditional Expectation}
+
+Note that equation \ref{eqn:last} is a specific instance of the law of iterated expectation expressed as an integral (sum). When used in the g formula, this expression is often referred to as the non-iterative conditional expectation (NICE) g formula.\cite{Wen2021} In this case, this integral expression is a simple sum:
+
+\begin{align*}
+E(Y^{a}) & = \int E(Y \mid A = a, W = w)\,d\mathbb{P}(w) = \sum_w E(Y \mid A = a, W = w)\cdot P(W = w)\\
+         & = E(Y \mid A = a, W = 1)\cdot P(W = 1) +  E(Y \mid A = a, W = 0)\cdot P(W=0)
+\end{align*}
+
+We can use the data in Table \ref{tab:tamoxifen_data} to construct a ``plug-in'' estimator of $E(Y^{a})$, assuming the identification assumptions hold. From Table \ref{tab:tamoxifen_data}, an estimate of $E(Y^{a=1})$ can be computed by first estimating the mean of breast cancer recurrence among women with $A = 1$ and $W = 1$, the mean of breast cancer recurrence among women with $A = 1$ and $W = 0$, as well as the overall proportion of women with $W = 1$ and $W = 0$. 
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccrr}
+\toprule
+$W$ & $A$ & $Y$ & $N$ \\
+\midrule
+0 & 0 & 0 & 1{,}421 \\
+0 & 0 & 1 &    171 \\
+0 & 1 & 0 & 1{,}238 \\
+0 & 1 & 1 &     96 \\
+1 & 0 & 0 &    507 \\
+1 & 0 & 1 &    253 \\
+1 & 1 & 0 &    847 \\
+1 & 1 & 1 &    368 \\
+\bottomrule
+\end{tabular}
+\caption{Data from Sato and Matsuyama (2003) on the effect of tamoxifen use on breast cancer recurrence among women who underwent surgery for breast cancer. These observational data include 4901 women with breast cancer assigned to tamoxifen use (A=1) or not (A=0), with an outcome measure of breast cancer recurrence (Y=1). Women were also classified as having positive lymph node metastasis (W=1) or not (W=0) at the time of surgery before tamoxifen use.}
+\label{tab:tamoxifen_data}
+\end{table}
+
+\newpage
+
+Using Table \ref{tab:tamoxifen_data}, we get:
+
+\begin{itemize}
+	\item[] $\hat{E}(Y \mid A = 1, W = 1)$: $\frac{368}{(847+368)} = 0.303$
+	\item[] $\hat{E}(Y \mid A = 1, W = 0)$: $\frac{96}{(96+1,238)} = 0.072$
+	\item[] $\hat{P}(W = 1)$: $\frac{(507+253+847+368)}{(1,421+171+1,238+96+507+253+847+368)} = 0.403$
+	\item[] $\hat{P}(W = 0)$: $1 - 0.403 = 0.597 $
+\end{itemize}
+
+\noindent and we can plug these numbers into the expression for $E(Y^{a = 1})$ to get:
+
+\begin{equation}
+0.303 \times 0.403 + 0.072 \times 0.597 \approx 0.165
+\end{equation}
+
+We repeat the process for $E(Y^{a = 0})$, which yields:
+
+\begin{itemize}
+    \item[] $\hat{E}(Y \mid A = 0, W = 1)$: $\frac{253}{(507+253)} = 0.333$
+    \item[] $\hat{E}(Y \mid A = 0, W = 0)$: $\frac{171}{(171+1{,}421)} = 0.107$
+\end{itemize}
+
+\noindent which, when plugged into the expression for $E(Y^{a = 0})$:
+
+\begin{equation}
+0.333 \times 0.403 + 0.107 \times 0.597 \approx 0.198
+\end{equation}
+
+%This means that, under our identification assumptions (causal consistency, positivity, and conditional exchangeability), we can use the law of iterated expectation (in this case, a weighted sum of the conditional outcome averages, with weights defined as the proportion of the sample with specific $W$ values) to estimate the causal risk difference:
+
+Giving:
+
+\begin{equation}
+\hat{\psi} = 0.165 - 0.198 = -0.03
+\end{equation} 
+
+\subsection{Iterative Conditional Expectation}
+
+We can re-express the NICE expression in the identification equation above $\sum_w E(Y \mid A = a, W = w)\cdot P(W = w)$, using iterated conditional expectation as $E[E(Y \mid A = a, W)]$, which we can also use as a g formula under the aforementioned identification assumptions:
+
+\begin{equation}
+E(Y^a) = E[E(Y \mid A = a, W)].
+\end{equation}
+
+This expression is a set of nested expectations. The first (inner) expectation represents predicted values of $Y$ for those with $A=a$ under the observed values of $W$. The second (outer) expectation represents the average of these predicted values of $Y$ among those with $A=a$, where the average is taken over the distribution of $W$. Using the Table \ref{tab:tamoxifen_data} data, we have already computed estimates of $E(Y \mid A = 1, W)$ and $E(Y \mid A = 0, W)$:
+
+\begin{itemize}
+  \item[] $\hat{E}(Y \mid A = 1, W = 1)$: $\frac{368}{(847+368)} = 0.303$; $N = 1{,}215$
+  \item[] $\hat{E}(Y \mid A = 1, W = 0)$: $\frac{96}{(96+1{,}238)} = 0.072$; $N = 1{,}334$
+  \item[] $\hat{E}(Y \mid A = 0, W = 1)$: $\frac{253}{(507+253)} = 0.333$; $N = 760$
+  \item[] $\hat{E}(Y \mid A = 0, W = 0)$: $\frac{171}{(171+1{,}421)} = 0.107$; $N = 1{,}592$
+\end{itemize}
+
+%To complete the outer expectation for the $A = 1$ stratum, we could simply take a weighted average of $0.303$ and $0.072$, with weights defined as the proportions of the $A=1$ stratum with $W = 1$ and $W = 0$, respectively. Indeed, in these data, this iterative conditional expectation approach reduces trivially to the non-iterative approach. However, another approach to taking the outer expectation would be to construct a dataset with individual-level predicted values of $Y$, denoted $\widetilde{Y}$, among everyone with $A = 1$ and everyone with $A = 0$ (i.e., those with either $W = 1$ or $W = 0$). A dataset with this information would look something like:
+
+A natural approach is to construct individual-level predicted values $\widetilde{Y}$ for each person, assigning each the conditional mean $\hat{E}(Y\mid A,W)$ at their observed covariate values:
+
+% NOTE: Original table had no caption or label (so LaTeX skipped it in the counter). Added both. Also: ID 3 appears twice (rows 3–4); the second occurrence should likely be ID 4.
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+ID &  $W$ & $A$ & $Y$ & $\widetilde{Y}$ \\
+\midrule
+1 & 1 & 1 & 0 &  0.303\\
+2 & 0 & 1 & 1 &  0.072\\
+3 & 1 & 0 & 0 &  0.333\\
+4 & 1 & 0 & 1 &  0.333\\
+5 & 0 & 1 & 0 &  0.072\\
+6 & 1 & 0 & 1 &  0.333\\
+7 & 0 & 0 & 0 &  0.107\\
+8 & 0 & 1 & 1 &  0.072\\
+\vdots & \vdots &  \vdots & \vdots &  \vdots \\
+\bottomrule
+\end{tabular}
+\caption{Extract of individual-level data from the Sato and Matsuyama (2003) dataset augmented with stratum-specific predicted outcome values $\widetilde{Y}$. For each individual, $\widetilde{Y}$ contains the stratum-specific conditional mean $\hat{E}(Y \mid A, W)$ evaluated at that individual's observed treatment and covariate values. These predicted values are averaged in the outer expectation of the iterative conditional expectation g formula.}
+\label{tab:ice_illustration}
+\end{table}
+
+\newpage
+
+%In this table, the number of women with $\widetilde{Y}$ values of 0.303, 0.072, 0.333, and 0.107 would be 1,215, 1,334, 760, and 1,592, respectively. If we computed the sample mean of $\widetilde{Y}$ among women with $A = 1$ and among women with $A = 0$, we would effectively be computing the outer expectation of the iterative conditional expectation equation. For example, among women with $A = 1$, computing: 
+
+Averaging $\widetilde{Y}$ within each exposure stratum computes the outer expectation; among women with $A=1$:
+
+\begin{equation}
+\frac{1}{N_1}\sum_{i = 1}^{N_1} \widetilde{Y}_i = \hat{E}[\hat{E}(Y \mid A = 1, W)],
+\end{equation}
+\noindent where $i = 1 \ldots N_1$ indexes all exposed women in the sample. 
+Implementing this procedure in our sample separately for exposed and unexposed women, we obtain:
+\begin{equation}
+\hat{\psi} = 0.165 - 0.198 = -0.03
+\end{equation} 
+
+\noindent which matches the estimate obtained from the NICE implementation.
+
+\section{Example 2: More Complex Time-Fixed Example}
+
+Our next example still follows the DAG in Figure \ref{fig:dag_a}, but $W$ is a  multivariate vector with one continuous, two binary, and one categorical confounder. The example is based on the data from the NHANES Epidemiologic Follow Up Survey (NHEFS), available with the book by Hern\'{a}n and Robins.\cite{Hernan2025} Our goal is to estimate the effect of quitting smoking ($A = 1$) on weight change between 1971 and 1982 ($Y$). These observational data include 1,394 men and women who were smokers in 1971. The first eight rows of the data are provided in Table \ref{tab:nhefs_data}. %Figure \ref{fig:nhefs} displays the univariate and bivariate distributions of all variables in the dataset. 
+
+\begin{table}[ht]
+\centering
+	\begin{tabular}{rrrrrrr}
+  \hline
+ ID & A & Y & age & income & race & sex \\ 
+  \hline
+  1 & 0.00 & -10.09 & 42.00 & Middle & 1.00 & 0.00 \\ 
+  2 & 0.00 & 2.60 & 36.00 & Middle & 0.00 & 0.00  \\ 
+  3 & 0.00 & 9.41 & 56.00 & Low    & 1.00 & 1.00 \\ 
+  4 & 0.00 & 4.99 & 68.00 & Low    & 1.00 & 0.00 \\ 
+  5 & 0.00 & 4.99 & 40.00 & Middle & 0.00 & 0.00 \\ 
+  6 & 0.00 & 4.42 & 43.00 & Low    & 1.00 & 1.00 \\ 
+  7 & 0.00 & -2.72 & 51.00 & Middle & 0.00 & 0.00 \\ 
+  8 & 0.00 & 9.86 & 43.00 & Low    & 0.00 & 0.00 \\  
+   \hline
+ 	\end{tabular}
+	\caption{Extract of the data from the NHANES Epidemiologic Follow Up Survey on the effect of quitting smoking on weight change between 1971 and 1982. These observational data include 1394 men and women who were smokers at baseline, some of whom quit smoking over the course of the follow-up period ($A = 1$), with an outcome measure of the difference in weight (in kg) between 1982 and 1971 ($Y$). Example confounding variables include age (continuous), income (three categories), race (binary), and sex (binary).}
+   \label{tab:nhefs_data}
+\end{table}
+
+\subsection{Non-Iterative Conditional Expectation}
+
+In this example, because $W$ represents a vector of mixed type confounders (age, income, race, sex), one cannot express the NICE g formula as a simple sum of weighted outcome averages among the exposed individuals. Writing this out more completely, we get:
+
+\begin{align*}
+E(Y^a) & = \int E(Y \mid A = a, W)\,d\mathbb{P}(w) \\
+	   & =	\sum_{w_4=0}^{2}\sum_{w_3=0}^{1}\sum_{w_2=0}^{1}\int E(Y \mid A=a, w_1, w_2, w_3, w_4) d\mathbb{P}_{W_1\mid W_2, W_3, W_4}(w_1 \mid w_2, w_3, w_4)\\ 
+	   & \hspace{6cm} \times P(W_2=w_2, W_3=w_3, W_4=w_4)
+\end{align*}
+
+In principle, evaluating this sum-integral combination in data could be done, but it would be laborious (relative to the iterated conditional expectation form). In code, this requires fitting an outcome model, predicting $Y$ under each exposure value, averaging predictions within strata of the discrete confounders, then computing a weighted sum across strata. %We'd have to write code for each expanded term in the sum, compute stratum specific probabilities, and then, within each stratum, compute age standardized averages of $Y$. In statistical programming code, this could be accomplished as:
+\begin{comment}
+	\item Fit a model that regresses the weight change outcome against the quit smoking exposure, as well as age, race, sex, and income.
+	\item Generate predictions from this model for each individual in the sample under two conditions: quit smoking set to 1 and 0, resepctively
+	\item Within joint strata of race, sex, and income, average these outcome model predictions, and compute the proportion of the sample in each stratum
+	\item Take the sum, over all strata, of the product of the averaged outcome model predictions and the proportions
+\begin{verbatim}
+# needed for age adjusted averages within levels of race, sex, and income
+# note this model assumes no interactions
+fit <- lm(wt82_71 ~ qsmk + age + race + sex + income3, data = b)
+
+# inner expectation: E(Y | A=a, W_i) for each individual
+b$Q1 <- predict(fit, newdata = b %>% mutate(qsmk = factor(1, levels = levels(b$qsmk))))
+b$Q0 <- predict(fit, newdata = b %>% mutate(qsmk = factor(0, levels = levels(b$qsmk))))
+
+# NICE: group by discrete cells (w2, w3, w4), average Q over age within each
+# cell (the empirical integral over w1), then weight by cell probability
+nice <- b %>%
+  group_by(race, sex, income3) %>%
+  summarise(
+    prob      = n() / nrow(b),   # P(W2=w2, W3=w3, W4=w4)
+    EY_a1     = mean(Q1),        # integral E(Y|A=1, w1, w2, w3, w4) f(w1) dw1
+    EY_a0     = mean(Q0),        # integral E(Y|A=0, w1, w2, w3, w4) f(w1) dw1
+    .groups   = "drop"           # remove the grouping variables from the outcome
+  )
+  
+E_Ya1_NICE <- sum(nice$EY_a1 * nice$prob) # weighted sum over w2, w3, and w4
+E_Ya0_NICE <- sum(nice$EY_a0 * nice$prob) # weighted sum over w2, w3, and w4	
+\end{verbatim}
+\end{comment}
+
+For clarity, we provide R code to implement this in the GitHub repository associated with this article. Taking this example to completion for illustration, we obtain:
+% NOTE: Original omitted the integral sign, making the expressions malformed. Added \int and W=w.
+\begin{align*}
+	\hat{E}(Y^{a = 1}) & = \int \hat{E}(Y \mid A = 1, W = w)\,d\hat{\mathbb{P}}(w) = 5.0 \\
+	\hat{E}(Y^{a = 0}) & = \int \hat{E}(Y \mid A = 0, W = w)\,d\hat{\mathbb{P}}(w) = 1.9 \\
+	\hat{\psi} & = \hat{E}(Y^{a = 1} - Y^{a = 0}) = 3.1 \\
+\end{align*}
+
+\begin{comment}
+\begin{figure}
+	\centering
+    \includegraphics[scale = .7]{nhefs_variables.png}
+    \caption{Bivariate distributions between all six variables in the NHEFS data.}
+    \label{fig:nhefs}
+\end{figure}
+\end{comment}
+
+\subsection{Iterative Conditional Expectation}
+
+We could implement this same procedure using the iterative conditional expectation approach as well. For example, we can write:
+
+\begin{equation}
+E(Y^a) = E_W[E(Y \mid A = a, W_1, W_2, W_3, W_4)]
+\end{equation}
+
+\noindent where $E_W(\bullet)$ denotes taking the expectation over the entire joint distribution of $W_1, W_2, W_3, W_4$ (note that the $E_W()$ notation, where the $W$ is subscripted, is often left out of this type of equation). This iterative conditional expectation procedure is trivially easy to implement in code. For example, the procedure could be implemented as: 
+
+\begin{itemize}
+	\item[1.] Fitting a regression model for the mean of $Y$ conditional on $A$, and all $W$'s
+	\item[2.] Generating predictions from this model for $Y$ under $A = 1$ and $A = 0$ for all individuals in the sample
+	\item[3.] Averaging these predictions in the sample (i.e., over the joint distribution of $W$'s)
+	\item[4.] Taking the difference of these averaged predictions
+\end{itemize}
+
+This procedure approximates the population integral by averaging over the empirical distribution of the observed covariates. R code to implement this procedure is available in the associated GitHub repository.
+\begin{comment}
+In R, the code for this might look something like:
+
+\begin{verbatim}
+# Step 1: fit outcome model: estimates the inner expectation E(Y | A, W)
+# note, this model assumes no interaction
+fit <- lm(wt82_71 ~ qsmk + age + race + sex + income3, data = b)
+
+# Step 2: inner expectation: counterfactual predictions under A=a for everyone
+b$Q1 <- predict(fit, newdata = transform(b, qsmk = 1))   # E(Y | A=1, W_i)
+b$Q0 <- predict(fit, newdata = transform(b, qsmk = 0))   # E(Y | A=0, W_i)
+
+# Step 3: outer expectation: average over empirical joint distribution of W
+E_Ya1 <- mean(b$Q1)
+E_Ya0 <- mean(b$Q0)
+
+# Step 4: take difference of mean counterfactual outcomes
+round(E_Ya1 - E_Ya0, 3)
+\end{verbatim}
+\end{comment}
+Implementing this in the NHEFS data with code, we obtain exactly the same results as in the NICE implementation:
+
+\begin{align*}
+\hat{E}(Y^{a = 1}) & = \hat{E}[\hat{E}(Y \mid A = 1, W)] = 5.0 \\
+  \hat{E}(Y^{a = 0}) & = \hat{E}[\hat{E}(Y \mid A = 0, W)] = 1.9 \\
+	\hat{\psi} & = \hat{E}(Y^{a = 1} - Y^{a = 0}) = 3.1 \\
+\end{align*}
+
+Both approaches yield $\hat{\psi} = 3.1$ kg, confirming their numerical equivalence in this parametric setting. 
+%which states that the mean weight change that would be observed if everyone quit smoking is 3.1 kg lower than would be observed if nobody quit smoking. It's important to note here that ICE and NICE g computation are nonparametrically equivalent. However, we used parametric models to fit the outcomes in both settings. We obtained identical results since these parametric models were identical, and since we did not need to fit parametric models for the confounders in this time-fixed setting (unlike in the forthcoming time-varying examples with NICE g computation). For this reason, we expect results to be identical. In more complex settings, this may not be the case.
+
+\section{Example 3: Time Varying Example}
+
+The law of iterated expectation becomes essential in time-varying settings where standard regression fails. We suppose a time-varying data generating structure as displayed in Figure \ref{fig:dag_b}. This Figure shows a time-varying treatment $A$ and a time-varying confounder affected by prior exposure $Z$, both measured at two time-points: $t \in \{0, 1\}$. The outcome $Y$ is measured at the end of follow-up. This structure implies that: (a) the effect of $A_1$ on $Y$ is confounded by $Z_1$, $Z_0$, and $A_0$; and (b) the effect of $A_0$ on $Y$ is confounded by $Z_0$. Furthermore, part of the effect of $A_0$ on $Y$ is mediated by $Z_1$ and $A_1$. Because of this, one cannot simply fit a standard regression model to estimate the effect of setting $A_0, A_1$ to some specific values $a_0, a_1$.\cite{Naimi2017a}
+
+\begin{wrapfigure}{r}{0.55\textwidth}
+\vspace{6pt}
+\centering
+  \begin{minipage}{0.51\textwidth}
+    \centering
+    \includegraphics[scale = .4]{simple_dag_b.png}
+    \caption{A directed acyclic graph (DAG) illustrating the causal structure for a time-varying confounding structure. The treatment and time-varying confounding variables $A$ and $Z$ are measured at two time-points $t \in \{0,1\}$. The outcome $Y$ is measured at the end of follow-up. This structure implies that: (a) the effect of $A_1$ on $Y$ is confounded by $Z_1$, $Z_0$, and $A_0$; and (b) the effect of $A_0$ on $Y$ is confounded by $Z_0$. Furthermore, part of the effect of $A_0$ on $Y$ is mediated by $Z_1$ and $A_1$. Because of this, one cannot simply fit a standard regression model to estimate the effect of setting $A_0, A_1$ to some specific values $a_0, a_1$. Instead, g methods can be used, such as the g formula, longitudinal AIPW, or longitudinal TMLE, all of which invoke the law of iterated expectation in a sequential manner.}
+    \label{fig:dag_b}
+  \end{minipage}%
+\vspace{6pt}
+\end{wrapfigure}
+
+Suppose in this case we were interested in the average treatment effect of $A$ on $Y$, defined as:
+\begin{align*}
+	\psi & = E(Y^{a_0 = 1, a_1 = 1} - Y^{a_0 = 0, a_1 = 0})\\
+	     &= E(Y^{\overline{a}_1 = 1} - Y^{\overline{a}_1 = 0})
+\end{align*}
+\noindent where $Y^{\overline{a}_1}$ is the potential outcome that would be observed if we set the history of the exposure up to time-point 1 (denoted $\overline{a}_1 = \{a_0, a_1\}$) to some specific values. 
+
+For a dataset generated from a DAG in Figure \ref{fig:dag_b}, we can rely on an extension of the same set of identification assumptions including causal consistency, sequential positivity, and sequential conditional exchangeability. As in the time-fixed example, under these assumptions, we can do the following:
+\begin{align}
+E(Y^{\overline{a}_1}) & = \int \int E(Y \mid Z_0, A_0 = a_0, Z_1, A_1 = a_1)\,d\mathbb{P}(Z_1\mid Z_0, A_0 = a_0)d\mathbb{P}(Z_0) \label{eq:nicegform1}\\
+					  & = E \bigg \{ E \bigg [ E \big (Y \mid Z_0, A_0 = a_0, Z_1, A_1 = a_1 \big ) \mid Z_0, A_0 = a_0 \bigg ] \bigg \} \label{eq:icegform1}
+\end{align}
+Here, equation \ref{eq:nicegform1} represents the conditional expectation of the outcome $Y$, weighted by the product of the conditional distribution of $Z_1$, and (because nothing affects $Z_0$ in the DAG) the marginal distribution of $Z_0$. Similarly, equation \ref{eq:icegform1} represents a sequence of nested predictions, subsequently averaged over all individuals in the sample. We explain each in turn. The data we use to do so are adapted from Naimi et al,\cite{Naimi2017a} and generate a tabled dataset with average outcome values within strata of four binary time-varying variables (two exposures, $A_0$, $A_1$; and two time-varying confounders, $Z_0$, $Z_1$). We provide the full dataset as an accompanying .csv file in the associated GitHub repository. 
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrr}
+  \hline
+ $Z_0$ & $A_0$ & $Z_1$ & $A_1$ & $Y$ & $N$ \\ 
+  \hline
+    0 &   0 &   0 &   0 & 150.00 & 195661 \\ 
+    0 &   0 &   0 &   1 & 151.99 & 72168 \\ 
+    0 &   0 &   1 &   0 & 148.50 & 63586 \\ 
+    0 &   0 &   1 &   1 & 150.50 & 35061 \\ 
+    0 &   1 &   0 &   0 & 151.50 & 56370 \\ 
+    0 &   1 &   0 &   1 & 153.50 & 30480 \\ 
+    0 &   1 &   1 &   0 & 149.99 & 26274 \\ 
+    0 &   1 &   1 &   1 & 152.00 & 21520 \\ 
+    1 &   0 &   0 &   0 & 151.51 & 133480 \\ 
+     1 &   0 &   0 &   1 & 153.50 & 73365 \\ 
+     1 &   0 &   1 &   0 & 150.00 & 62477 \\ 
+     1 &   0 &   1 &   1 & 152.01 & 51994 \\ 
+     1 &   1 &   0 &   0 & 153.00 & 43357 \\ 
+     1 &   1 &   0 &   1 & 154.99 & 35980 \\ 
+     1 &   1 &   1 &   0 & 151.49 & 43773 \\ 
+     1 &   1 &   1 &   1 & 153.50 & 54454 \\ 
+   \hline
+\end{tabular}
+\caption{Tabled data demonstrating the mean of a continuous outcome variable $Y$ within all strata created by four time-varying variables. These data are generated from a simulation mechanism following the causal relations depicted in Figure \ref{fig:dag_b}.}
+\label{tab:time_varying_data}
+\end{table}
+
+\subsection{NICE G Formula with Two Timepoints}
+
+The non-iterative conditional expectation g formula with two timepoints, as expressed in the above equation \ref{eq:nicegform1}, includes the conditional expectation of the outcome $Y$ as a function of both $Z$ and $A$ variables, weighted by the distributions of $Z_1$ and $Z_0$:
+
+\begin{align*}
+E(Y^{\overline{a}_1}) & = \int \int E(Y \mid Z_0, A_0 = a_0, Z_1, A_1 = a_1)\,d\mathbb{P}(Z_1\mid Z_0, A_0 = a_0)d\mathbb{P}(Z_0)\\
+% NOTE: Original used random-variable notation Z_0, Z_1 inside a sum over realizations z_0, z_1. Corrected to lowercase to distinguish the realization from the random variable.
+					  & = \sum_{z_0 = 0}^1 \sum_{z_1=0}^1 E(Y \mid Z_0 = z_0, A_0 = a_0, Z_1 = z_1, A_1 = a_1)P(Z_1 = z_1 \mid Z_0 = z_0, A_0 = a_0)P(Z_0 = z_0)
+\end{align*}
+
+In this equation, the law of iterated expectation can be implemented by taking the average of $Y$ conditional on $Z_0$, $A_0 = a_0$, $Z_1$, and $A_1 = a_1$, weighting this average by the probability that $Z_1 = z_1$ conditional on $Z_0$ and $A_0 = a_0$, and then weighting this weighted average by the probability that $Z_0 = z_0$.
+
+The conditional means $\hat{E}(Y \mid Z_0, A_0, Z_1, A_1)$ are read directly from Table~\ref{tab:time_varying_data}. Two additional quantities are required: the marginal probability $\hat{P}(Z_0)$ and the conditional probabilities $\hat{P}(Z_1 \mid Z_0, A_0)$, which can be computed using the $N$s in the tabled data. From that dataset:
+
+\begin{itemize}
+  \item $\hat{P}(Z_0 = 1) = 0.500$
+  \item $\hat{P}(Z_1 = 1 \mid Z_0 = 0, A_0 = 0) = 0.269$;\quad $\hat{P}(Z_1 = 1 \mid Z_0 = 0, A_0 = 1) = 0.356$
+  \item $\hat{P}(Z_1 = 1 \mid Z_0 = 1, A_0 = 0) = 0.355$;\quad $\hat{P}(Z_1 = 1 \mid Z_0 = 1, A_0 = 1) = 0.553$
+\end{itemize}
+
+Plugging these into the NICE g formula for $\overline{a}_1 = (1,1)$, each of the four $(z_0, z_1)$ combinations contributes one term:
+
+\begin{align*}
+\hat{E}(Y^{\overline{a}_1=(1,1)})
+  &= 153.50 \times 0.644 \times 0.500 \quad (Z_0=0,\;Z_1=0) \\
+% NOTE: Table value for (Z0=0, A0=1, Z1=1, A1=1) is Y=152.00; the 152.01 entry in the table belongs to a different row (Z0=1, A0=0, Z1=1, A1=1).
+  &\quad + 152.00 \times 0.356 \times 0.500 \quad (Z_0=0,\;Z_1=1) \\
+  &\quad + 154.99 \times 0.446 \times 0.500 \quad (Z_0=1,\;Z_1=0) \\
+  &\quad + 153.50 \times 0.554 \times 0.500 \quad (Z_0=1,\;Z_1=1) \\
+  &= 49.46 + 27.03 + 34.57 + 42.51 \;=\; 153.57
+\end{align*}
+
+Repeating for $\overline{a}_1 = (0,0)$:
+
+\begin{align*}
+\hat{E}(Y^{\overline{a}_1=(0,0)})
+  &= 150.00 \times 0.731 \times 0.500
+   + 148.50 \times 0.269 \times 0.500 \\
+  &\quad + 151.50 \times 0.644 \times 0.500
+   + 150.00 \times 0.356 \times 0.500 \\
+  &= 54.83 + 19.97 + 48.81 + 26.67 \;=\; 150.28
+\end{align*}
+
+\noindent giving an estimated average treatment effect of:
+
+\begin{equation}
+\hat{\psi} = 153.57 - 150.28 = 3.29
+\end{equation}
+
+R code to implement this procedure is available in the associated GitHub repository.
+
+\begin{comment}
+Note also that this equation has been written in a number of different ways in the literature, for example:
+
+\begin{equation}
+E(Y^{\overline{a}_{T}}) = \int E(Y\mid \overline{A}_{T}= \overline{a}_{T}, \overline{Z}_{T})\prod_{t=1}^T\,d\mathbb{P}_{\overline{Z}_{t}\mid \overline{A}_{t}=\overline{a}_{t}}(\overline{z}_{t})
+\end{equation}
+where 
+\begin{equation}
+d\mathbb{P}^{\overline{a}}(\overline{z}_T) = \prod_{t=1}^T f(z_t \mid \overline{a}_{t-1}, \overline{z}_{t-1})\,d\lambda(\overline{z}_t)
+\end{equation}
+
+\noindent However, the key is that this mathematical operation is simply the law of iterated expectation applied at each time point, and under the causal identification assumptions listed.
+\end{comment}
+ 
+\subsection{ICE G Formula with Two Timepoints}
+
+The ICE g formula in equation~\eqref{eq:nicegform1} proceeds through sequential averaging steps rather than one combined weighted sum. In the case with two time-points, three sequential expectations are taken: 
+
+\begin{equation}
+E(Y^{\overline{a}_1}) = \underbrace{E \bigg \{ \underbrace{E \bigg [ \underbrace{E \big (Y \mid Z_0, A_0 = a_0, Z_1, A_1 = a_1 \big )}_{\text{first (innermost) expectation}} \mid Z_0, A_0 = a_0 \bigg ]}_{\text{second expectation}} \bigg \}}_{\text{third (outermost) expectation}}
+\end{equation}
+
+The first (inner) expectation can be thought of as fitting a model to the data, regressing $Y$ against the two treatments and the two time-varying confounders, and generating predictions from this model under $A_0 = a_0$ and $A_1 = a_1$ for all individuals in the sample. This procedure represents the innermost expectation.
+
+The second expectation can be thought of as fitting a model that regresses the predictions from the first expectation against $Z_0$ and $A_0$, and generating predictions from this model under $A_0 = a_0$ for all individuals in the sample.
+
+The third (outer) expectation can be thought of as averaging the predictions from the second expectation across all individuals in the sample. Under the causal identification assumptions, this latter expectation can be interpreted as an estimate of $E(Y^{\overline{a}_1})$.
+
+\begin{comment}
+In R code, in this simple setting, we could do the following:
+
+\begin{verbatim}
+# Read full individual-level data
+d <- read.csv("time_varying_data.csv")
+
+# Step 1: inner expectation — fit E(Y | Z0, A0, Z1, A1), predict under (a0, a1)
+fit1     <- lm(y ~ z0 + a0 + z1 + a1, data = d)
+d$Q1_11  <- predict(fit1, newdata = transform(d, a0 = 1, a1 = 1))
+d$Q1_00  <- predict(fit1, newdata = transform(d, a0 = 0, a1 = 0))
+
+# Step 2: middle expectation — fit E(Q1 | Z0, A0), predict under a0
+fit2_11  <- lm(Q1_11 ~ z0 + a0, data = d)
+fit2_00  <- lm(Q1_00 ~ z0 + a0, data = d)
+d$Q2_11  <- predict(fit2_11, newdata = transform(d, a0 = 1))
+d$Q2_00  <- predict(fit2_00, newdata = transform(d, a0 = 0))
+
+# Step 3: outer expectation: average over empirical distribution of Z0
+E_Ya1    <- mean(d$Q2_11)
+E_Ya0    <- mean(d$Q2_00)
+
+round(E_Ya1 - E_Ya0, 2)
+\end{verbatim}
+\end{comment}
+
+R code to implement this procedure is available in the associated GitHub repository. Running this code with the data in the associated .csv file gives us the same estimate as in the NICE g formula example.
+
+\subsection{NICE G Formula with Multiple Timepoints}
+
+In settings with multiple timepoints, this NICE G formula expression can be generalized. For instance, following a data generating mechanism such as in Figure \ref{fig:dag_b} generalized to multiple timepoints, we can define a discrete time follow-up period characterized by $t = 0, 1, 2, \ldots T$, where $T$ represents the end of follow-up. We can then write a g formula for the counterfactual mean:  
+
+\begin{equation}
+E(Y^{\overline{a}_T}) = \int \cdots \int E(Y \mid \overline{Z}_T, \overline{A}_T = \overline{a}_T)\prod_{t = 0}^T \,d\mathbb{P}(Z_t\mid \overline{Z}_{t-1}, \overline{A}_{t-1} = \overline{a}_{t-1})
+\end{equation}
+
+\noindent where integration occurs at each time point $t$ with respect to the conditional distribution of $Z_t$. In effect, when $Z_t$ is binary, this equation simply takes a conditional $Z_t$ weighted average of the outcome at each time point, averaged over all timepoints. %Note that implementing NICE at multiple timepoints requires modeling the time-varying covariates, a common limitation, since getting these models wrong can lead to bias. 
+
+\subsection{ICE G Formula with Multiple Timepoints}
+
+The ICE g formula can be generalized to $T$ timepoints via backward recursion. The nested structure of the ICE g formula naturally leads to:
+
+\begin{equation}
+Q_{T+1}(\overline{a}_T) = E(Y \mid \overline{Z}_T = \overline{z}_T,\, \overline{A}_T = \overline{a}_T)
+\end{equation}
+
+\noindent where $Q_{T+1}(\overline{a}_T)$ are predictions from a model that regresses the outcome at time $T$ against everything that comes before it. These predictions can then be iterated backwards for $t = T, T-1, \ldots, 1$:
+
+\begin{equation}
+Q_t(\overline{a}_{t-1}) = E\bigl(Q_{t+1} \mid \overline{Z}_{t-1}=\overline{z}_{t-1},\, A_{t-1}=a_{t-1}\bigr)
+\end{equation}
+
+\noindent and recover the counterfactual mean as the final outer expectation:
+
+\begin{equation}
+E(Y^{\overline{a}_T}) = E(Q_1)
+\end{equation}
+
+\noindent where the outermost expectation is over the marginal distribution of $Z_0$. In practice, each step requires regressing $Q_{t}$ on $(\overline{Z}_{t-1}, A_{t-1})$ and predicting under $A_{t-1} = a_{t-1}$. This sequence of $T$ outcome regressions run backward from the end of follow-up is the backbone of the iterative g computation algorithm and longitudinal targeted maximum likelihood estimation.\cite{Schomaker2019} Expanding the recursion, the ICE g formula can therefore be written in fully nested form as:
+
+\begin{equation}
+E(Y^{\overline{a}_{T}}) = E\bigl\{\cdots E\bigl[ E\bigl(Y\mid \overline{Z}_{T},\, \overline{A}_{T}= \overline{a}_{T}\bigr) \mid \overline{Z}_{T-1},\, A_{T-1}= a_{T-1}\bigr] \cdots \mid Z_0,\, A_0= a_0 \bigr\}
+\end{equation}
+
+\section{Conclusion}
+
+Causal inference methods are based on a foundation of mathematics that can be confusing for applied researchers. This primer has sought to clarify the notation and underlying conceptual foundation behind identifying causal effects using the g formula, which is a causal re-formulation of the law of iterated expectation. In addition, the equations representing the law of iterated expectation can be used to estimate causal effects using two versions of the parametric g computation algorithm, by ``plugging'' predictions from data into the equations resulting from the law of iterated expectation under causal identification assumptions. 
+
+%Indeed, the law of iterated expectation is the ``backbone'' of the g formula as both an identification and estimation tool in both time-fixed and time-varying settings. Under causal consistency, positivity, and conditional exchangeability, unobservable counterfactual means can be rewritten as a standardized weighted average of observed conditional outcome means, which is a direct application of the law of iterated expectation over the covariate distribution.
+
+In our examples, the two equivalent representations of this average, NICE and ICE, produce identical estimates by different routes. While this may commonly be the case in time-fixed exposure settings, this will often not be the case in time-varying exposure settings when time-varying confounding is operating. Estimating effects with NICE g computation requires modeling the distribution of time-varying confounders, where predictions from these models serve as ``weights'' in the law of iterated expectation.\cite{Cole2013, Naimi2021} In contrast, ICE g computation does not require models for the distribution of time-varying confounders, and is thus robust to misspecification of these models (at some cost in precision).
+
+While ICE g computation is robust to misspecification of the models for time-varying confounders, both ICE and NICE g computation require correct parametric models for the outcome as a function of the exposures and confounders. Misspecification of these models can lead to biased estimates, leading some to use nonparametric (e.g., machine learning) methods instead. However, when parametric outcome models are replaced with machine learning, doubly robust estimators such as AIPW or TMLE should be used to correct the resulting estimation bias.\cite{Diaz2020}
+
+Herein, we referred to ICE and NICE formulations as different, or alternative, implementations. This is true computationally--i.e., in terms of how data are actually used with statistical software code (they are different representations of the same observed data functional), potentially resulting in different numerical values obtained from a g computation estimator. However, mathematically, ICE and NICE formulations are (nonparametrically) equivalent, meaning they represent the same causal estimand. In our experience, this contrast (on the one hand, they are different, on the other hand, they are equivalent) is often a source of confusion for students encountering these concepts for the first time. Resolving this confusion can serve as an important step in navigating the causal inference literature.
+
+Understanding the law of iterated expectation provides a conceptual bridge connecting causal identification to practical estimation. Understanding some of the more technical mathematical concepts that are invoked, as we do in the Appendix, can also serve to clarify important statistical papers in causal inference. Whether implemented in its non-iterative or iterative form (or even augmented with propensity score information to yield doubly robust estimators), the core operation remains a structured, assumption-justified weighted average of conditional outcome means. Familiarity with this operation equips researchers to understand, implement, and critically evaluate the full spectrum of g methods in causal inference.
+
+\newpage
+
+\bibliographystyle{epid}
+\bibliography{main_references}
+
+\newpage
+
+\section*{Appendix: Integration, Probability, Statistics, and Measure Theory}
+
+Readers encountering notation such as: 
+$$\int g(x)\mathbb{P}(x)$$
+
+\noindent may naturally wonder how this relates to the ordinary integrals learned in calculus. The answer is that several different notions of integration exist, each designed to generalize the idea of taking weighted averages. While these notions differ mathematically, they share the same underlying goal: accumulating values of a function according to some weighting scheme. 
+
+\begin{table}[ht]
+\centering
+\caption{Commonly deployed concepts of integration and their typical uses in applied statistics and epidemiology. All expressions evaluate the same abstract quantity $E[g(X)]$; the choice of integral reflects the structure of the random variable and the mathematical tools available.}
+\label{tab:int_table}
+\begin{tabular}{p{3.2cm}p{3.5cm}p{3.2cm}p{4.5cm}}
+\hline
+\textbf{Integral Type} & \textbf{Integrates WRT} & \textbf{Intuition} & \textbf{Typical Use} \\
+\hline
+Finite Sum & $P(X{=}x)$ & Probability mass function & Categorical data, yielding weights for weighted sums\\[6pt]
+Riemann & $dx$ & Area under curve & Standard calculus integration \\[6pt]
+Riemann--Stieltjes & $dF_X(x)$ & Average using a cumulative distribution function & Classical probability, unifies sum and Riemann integral via CDF increments \\[6pt]
+Lebesgue & $d\mu(x)$ & Average with respect to measure & Modern mathematical analysis \\[6pt]
+Lebesgue--Stieltjes & $d\nu_{F}(x)$ & Probability distributions & Probability theory \\[6pt]
+Probability & $d\mathbb{P}(x)$ & Probability distributions & Most general form used in statistics and causal inference \\[6pt]
+\hline
+\end{tabular}
+\end{table}
+
+\newpage
+
+Commonly deployed concepts of integration, and their typical uses include (Table \ref{tab:int_table}):
+
+\noindent {\bf Riemann Integration}
+
+\noindent The Riemann integral,
+$$\int_a^b g(x)dx,$$
+
+\noindent is the integral most readers encounter in introductory calculus. It is constructed by partitioning the domain of the function into many small intervals, approximating the area under the curve using rectangles, and taking a limit as the widths of the rectangles become arbitrarily small. Conceptually, Riemann integration answers the question: How much area lies beneath a curve?
+
+\noindent {\bf Riemann--Stieltjes Integration}
+
+\noindent The Riemann--Stieltjes integral,
+$$\int g(x)dF(x),$$
+
+\noindent generalizes the Riemann integral by replacing increments of length $dx$ with increments of a cumulative function $dF(x)$, often a cumulative distribution function (CDF). It is also commonly seen in the causal inference literature.$^\text{(for example, }$\cite{Hernan2025}$^{\text{ Technical Point 1.1)}}$ Rather than weighting observations according to the width of an interval, the weighting is determined by how much probability accumulates over that interval. When $F$ is a cumulative distribution function, the Riemann--Stieltjes integral accumulates with respect to the probability mass allocated by $F_X$. When $F_X$ is smooth with density $f_X$, we have $dF_X(x) = f_X(x)\,dx$ and the Riemann--Stieltjes integral reduces to the familiar density-weighted integral. When $F_X$ is a step function (as it is for a discrete random variable) the integral becomes a weighted sum. Like the Lebesgue integral, the Riemann--Stieltjes integral provides a single expression that can accommodate both discrete and continuous random variables without modification:
+\begin{equation}
+E(Y) = \int E(Y\mid X=x)\,dF_X(x),
+\end{equation}
+which is why this notation appears frequently in the causal inference and statistics literature when authors want one formula to cover discrete and continuous variables alike.
+
+\noindent {\bf Lebesgue Integration}
+The Lebesgue integral,
+$$\int g(x)d\mu(x),$$
+
+\noindent is the modern foundation of probability theory. Whereas Riemann integration partitions the domain of a function into vertical slices, Lebesgue integration partitions the range of the function into horizontal slices and measures the size of the sets that map into each slice. This construction provides greater mathematical flexibility and supports powerful convergence results that are central to modern statistical theory.
+
+\noindent {\bf Lebesgue--Stieltjes Integration}
+The Lebesgue--Stieltjes integral also takes the form
+$$\int g(x)dF(x),$$
+
+but is defined using the measure induced by the cumulative distribution function $F$ rather than through the classical Riemann--Stieltjes construction. For most distributions encountered in applied statistics, the numerical value agrees with the corresponding Riemann--Stieltjes integral whenever the latter exists. The distinction becomes important primarily in theoretical work involving convergence, consistency, and asymptotic properties of estimators.
+
+\noindent {\bf Probability Integrals}
+\noindent Throughout this paper we use expressions such as
+$$\int g(x)d\mathbb{P}(x),$$
+
+\noindent where $\mathbb{P}$ denotes the probability distribution of a random variable $X$. This notation is best interpreted as taking an average of $g(x)$ with respect to the probability distribution of $X$. When $X$ is discrete,
+$$\int g(x)d\mathbb{P}(x) = \sum_x g(x)\,P(X=x).$$
+
+\noindent When $X$ possesses a density $f_X$ with respect to Lebesgue measure,
+$$\int g(x)d\mathbb{P}(x) = \int g(x)\,f_X(x)\,dx.$$
+
+\noindent When $X$ contains both discrete and continuous components, the notation remains valid without modification. In particular, the law of iterated expectations and the g formula can both be expressed compactly using the notation
+$$\int g(x)d\mathbb{P}(x),$$
+
+\noindent regardless of whether the covariates are binary, categorical, continuous, or mixtures thereof. Thus, the integral notation $\int E(Y \mid X=x)\,d\mathbb{P}(x)$ used in this primer is deliberately agnostic about the type of variable being averaged over, which is often the notation's primary utility in applied settings. 
+
+However, an important mathematical question involves the kind of mathematical object represented by $d\mathbb{P}(x)$ (the probability distribution governing $X$), and whether this distribution allows us to compute integrals as simple sums, a standard calculus (e.g., Riemann) integral, or whether we require something more general. The answer to this mathematical question depends on the concept of a \emph{dominating measure}, and important concepts in modern analysis and measure theory. 
+
+Every probability distribution $\mathbb{P}$ can be described relative to some reference (dominating) measure, often denoted $\nu$ (pronounced ``nu''). Informally, this reference measure is a rule for assigning ``sizes'' to subsets of the real line. A measure $\nu$ is said to dominate a probability measure $\mathbb{P}$ if $\mathbb{P}$ is absolutely continuous with respect to $\nu$, meaning that every set assigned measure zero by $\nu$ is also assigned probability zero by $\mathbb{P}$. This \emph{absolute continuity} property is written $\mathbb{P} \ll \nu$ (where ``$\ll$'' is read, ``is absolutely continuous with respect to \ldots''). When structured in this measure-theoretic way, we obtain a distribution $\mathbb{P}$ that cannot put a positive probability on any set that $\nu$ considers to have zero size. 
+  
+These formalisms can be used to derive a central result in measure theory, the Radon-Nikodym theorem, used to guarantee that whenever $\mathbb{P} \ll \nu$ there exists a non-negative function $p = d\mathbb{P}/d\nu$ (the Radon-Nikodym derivative) such that $\int g(x)\,d\mathbb{P}(x) = \int g(x)\,p(x)\,d\nu(x)$. This Radon-Nikodym derivative provides the formal bridge from the dominating measure to the distribution function. The choice of the dominating measure $\nu$ determines which integration framework is being invoked. Common dominating measures correspond to the familiar types of random variable. For a discrete (binary, categorical, or count-valued) random variable, the distribution is dominated by the \emph{counting measure}, which assigns size $1$ to each individual point and size $0$ to any interval containing no probability mass. In this case the Radon-Nikodym derivative is the probability mass function $P(X=x)$, and the integral collapses to the familiar weighted sum $\int g(x)\,d\mathbb{P}(x) = \sum_x g(x)\,P(X=x)$. For a continuous random variable, the distribution is typically dominated by the \emph{Lebesgue measure} (a rigorous generalization of ``length'' on the real line), and the Radon-Nikodym derivative is the probability density function $f_X$, so that $\int g(x)\,d\mathbb{P}(x) = \int g(x)\,f_X(x)\,dx$. When $X$ contains is a mixed distributions (positive probability mass for some observations, a density for others) neither measure alone dominates, and a combination is required. 
+
+\end{document}
