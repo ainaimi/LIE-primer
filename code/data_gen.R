@@ -14,6 +14,10 @@ expit <- function(x){
   1/(1+exp(-x))
 }
 
+# Seed pinned so that the distributed CSV, Table 4 in the manuscript, and all
+# in-text arithmetic in Example 3 derive from this exact draw.
+set.seed(123)
+
 n <- 1e6
 
 z0 <- rbinom(n, size = 1, prob = .5)

@@ -27,16 +27,21 @@ d <- read_csv(here("data", "time_varying_data.csv"))
 # ── Step 1: inner expectation ─────────────────────────────────────────────
 # Fit E(Y | Z0, A0, Z1, A1); predict under each static intervention regime.
 # These predictions are labeled Q1 in the backward recursion notation.
-fit1    <- lm(y ~ z0 + a0 + z1 + a1, data = d)
+# As described in the manuscript, the model is SATURATED (all interactions
+# among the four binary variables), so no smoothing is imposed on the 16
+# strata and the ICE estimate agrees exactly with the NICE estimate.
+# (With non-saturated models, e.g., y ~ z0 + a0 + z1 + a1, the two
+# implementations generally return slightly different numbers.)
+fit1    <- lm(y ~ z0 * a0 * z1 * a1, data = d)
 d$Q1_11 <- predict(fit1, newdata = transform(d, a0 = 1, a1 = 1))
 d$Q1_00 <- predict(fit1, newdata = transform(d, a0 = 0, a1 = 0))
 
 # ── Step 2: middle expectation ────────────────────────────────────────────
-# Regress the Step 1 predictions on (Z0, A0) and predict under each a0.
-# This marginalizes over the interventional distribution of Z1, replacing
-# Z1 with its expected contribution given (Z0, A0=a0).
-fit2_11 <- lm(Q1_11 ~ z0 + a0, data = d)
-fit2_00 <- lm(Q1_00 ~ z0 + a0, data = d)
+# Regress the Step 1 predictions on (Z0, A0), again saturated, and predict
+# under each a0. This marginalizes over the interventional distribution of
+# Z1, replacing Z1 with its expected contribution given (Z0, A0=a0).
+fit2_11 <- lm(Q1_11 ~ z0 * a0, data = d)
+fit2_00 <- lm(Q1_00 ~ z0 * a0, data = d)
 d$Q2_11 <- predict(fit2_11, newdata = transform(d, a0 = 1))
 d$Q2_00 <- predict(fit2_00, newdata = transform(d, a0 = 0))
 
